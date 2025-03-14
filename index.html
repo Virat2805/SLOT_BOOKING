@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>EV Charge Slot Booking</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    .hidden {
+      display: none;
+    }
+    .station-button {
+      margin: 5px;
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .charging-box {
+      width: 80px;
+      height: 80px;
+      background-color: #f0f0f0;
+      border: 1px solid #ccc;
+      display: inline-block;
+      margin: 10px;
+      vertical-align: top;
+      cursor: pointer;
+      line-height: 80px;
+      text-align: center;
+    }
+    .charging-box.booked {
+      background-color: red;
+      color: white;
+    }
+    #bookingModal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+    }
+    #overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+    }
+    #bookingForm {
+      position: relative;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 20px;
+      border: 1px solid #ccc;
+      z-index: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="loginSection">
+    <h2>Login</h2>
+    <label for="username">Username:</label>
+    <input type="text" id="username" /><br><br>
+    <label for="password">Password:</label>
+    <input type="password" id="password" /><br><br>
+    <button onclick="login()">Login</button>
+    <p id="loginError" style="color:red;"></p>
+  </div>
+
+  <div id="stationSection" class="hidden">
+    <h2>Select a Station</h2>
+    <div id="stations"></div>
+  </div>
+
+  <div id="chargingSection" class="hidden">
+    <h2>Charging Points at <span id="selectedStationName"></span></h2>
+    <div id="chargingPoints"></div>
+    <br>
+    <button onclick="backToStations()">Back to Stations</button>
+  </div>
+
+  <div id="bookingModal">
+    <div id="overlay"></div>
+    <div id="bookingForm">
+      <h3>Book Charging Slot</h3>
+      <label for="bookingTime">Time:</label>
+      <input type="time" id="bookingTime" /><br><br>
+      <label for="phoneNumber">Phone Number:</label>
+      <input type="tel" id="phoneNumber" /><br><br>
+      <button onclick="submitBooking()">Submit</button>
+      <button onclick="closeBookingModal()">Cancel</button>
+    </div>
+  </div>
+
+  <script>
+    const validUsername = "admin";
+    const validPassword = "12345678";
+
+    const stations = [
+      { name: "Station A", points: Array.from({length: 6}, () => ({ booked: false })) },
+      { name: "Station B", points: Array.from({length: 6}, () => ({ booked: false })) },
+      { name: "Station C", points: Array.from({length: 6}, () => ({ booked: false })) }
+    ];
+
+    let currentStationIndex = null;
+    let currentPointIndex = null;
+
+    function login() {
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
+      if (username === validUsername && password === validPassword) {
+        document.getElementById("loginSection").classList.add("hidden");
+        showStations();
+      } else {
+        document.getElementById("loginError").textContent = "Invalid username or password.";
+      }
+    }
+
+    function showStations() {
+      document.getElementById("stationSection").classList.remove("hidden");
+      const stationsDiv = document.getElementById("stations");
+      stationsDiv.innerHTML = "";
+      stations.forEach((station, index) => {
+        const btn = document.createElement("button");
+        btn.textContent = station.name;
+        btn.className = "station-button";
+        btn.onclick = function() { selectStation(index); };
+        stationsDiv.appendChild(btn);
+      });
+    }
+
+    function selectStation(index) {
+      currentStationIndex = index;
+      document.getElementById("stationSection").classList.add("hidden");
+      document.getElementById("chargingSection").classList.remove("hidden");
+      document.getElementById("selectedStationName").textContent = stations[index].name;
+      showChargingPoints();
+    }
+
+    function backToStations() {
+      document.getElementById("chargingSection").classList.add("hidden");
+      document.getElementById("stationSection").classList.remove("hidden");
+    }
+
+    function showChargingPoints() {
+      const pointsDiv = document.getElementById("chargingPoints");
+      pointsDiv.innerHTML = "";
+      const station = stations[currentStationIndex];
+      station.points.forEach((point, index) => {
+        const box = document.createElement("div");
+        box.className = "charging-box";
+        box.textContent = point.booked ? "Booked" : "Free";
+        if (point.booked) {
+          box.classList.add("booked");
+        }
+        box.onclick = function() {
+          if (!point.booked) {
+            currentPointIndex = index;
+            openBookingModal();
+          } else {
+            alert("This slot is already booked.");
+          }
+        };
+        pointsDiv.appendChild(box);
+      });
+    }
+
+    function openBookingModal() {
+      document.getElementById("bookingModal").style.display = "block";
+    }
+
+    function closeBookingModal() {
+      document.getElementById("bookingModal").style.display = "none";
+      document.getElementById("bookingTime").value = "";
+      document.getElementById("phoneNumber").value = "";
+    }
+
+    function submitBooking() {
+      const time = document.getElementById("bookingTime").value;
+      const phone = document.getElementById("phoneNumber").value;
+      if (time === "" || phone === "") {
+        alert("Please fill in all details.");
+        return;
+      }
+
+      stations[currentStationIndex].points[currentPointIndex] = {
+        booked: true,
+        time: time,
+        phone: phone
+      };
+      closeBookingModal();
+      showChargingPoints();
+    }
+  </script>
+
+</body>
+</html>
